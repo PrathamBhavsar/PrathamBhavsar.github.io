@@ -3,11 +3,11 @@
 ## Generated with https://github.com/google/shaka-packager version v2.6.1-634af65-release
 #EXT-X-TARGETDURATION:7
 #EXT-X-PLAYLIST-TYPE:VOD
-#EXT-X-MAP:URI="https://prathambhavsar.github.io/560334/m3u8/audio_init.mp4"
+#EXT-X-MAP:URI="audio.mp4"
 #EXTINF:6.016,
-https://prathambhavsar.github.io/560334/m3u8/audio1.m4a
+audio1.m4a
 #EXTINF:5.995,
-https://prathambhavsar.github.io/560334/m3u8/audio2.m4a
+audio2.m4a
 #EXTINF:2.989,
-https://prathambhavsar.github.io/560334/m3u8/audio3.m4a
+audio3.m4a
 #EXT-X-ENDLIST
