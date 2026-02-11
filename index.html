@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pratham Bhavsar | Developer Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="container nav-content">
+      <a class="logo" href="#hero">Pratham Bhavsar</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#skills">Skills</a>
+        <a href="#projects">Projects</a>
+        <a href="#education">Education</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark and light mode">
+        <span class="icon" aria-hidden="true">◐</span>
+      </button>
+      <button id="menuToggle" class="menu-toggle" aria-label="Open navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div id="mobileMenu" class="mobile-menu" aria-label="Mobile navigation">
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#skills">Skills</a>
+      <a href="#projects">Projects</a>
+      <a href="#education">Education</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="hero" class="hero">
+      <div class="container hero-content">
+        <div class="hero-media">
+          <div class="avatar" aria-hidden="true">
+            <span>PB</span>
+          </div>
+        </div>
+        <p class="eyebrow">Flutter Developer & Software Engineer</p>
+        <h1>Building scalable mobile, AI and web solutions</h1>
+        <p class="hero-intro">
+          I design and ship reliable products across fintech, AI chatbot systems, and full-stack platforms with a focus on performance, clean architecture, and great user experience.
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#projects">View Projects</a>
+          <a class="btn ghost" href="#contact">Get in Touch</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>About</h2>
+          <p>Professional summary</p>
+        </div>
+        <div class="card">
+          <p>
+            I specialize in building high-performance fintech and AI-driven solutions. My work spans Flutter mobile apps, AI chatbot integrations, and full-stack systems that are robust, secure, and scalable. I care deeply about clean code, maintainable architectures, and delivering real business impact.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="experience" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Experience</h2>
+          <p>Recent roles and responsibilities</p>
+        </div>
+        <div class="grid cards">
+          <article class="card">
+            <h3>Flutter Developer</h3>
+            <p class="muted">Prudent Corporate · 09/2025 – Present</p>
+            <p>Leading Flutter development for fintech applications with a focus on speed, security, and UX quality.</p>
+          </article>
+          <article class="card">
+            <h3>Software Development Engineer</h3>
+            <p class="muted">Pixel Gen · 08/2025 – Present</p>
+            <p>Building scalable software solutions across web and backend services with CI/CD best practices.</p>
+          </article>
+          <article class="card">
+            <h3>Flutter Developer</h3>
+            <p class="muted">Nautilus Techlabs · 02/2024 – 09/2025</p>
+            <p>Delivered production Flutter apps and integrated AI chatbot features for customer engagement.</p>
+          </article>
+          <article class="card">
+            <h3>Flutter Intern</h3>
+            <p class="muted">Exito Systems · 11/2023 – 02/2024</p>
+            <p>Contributed to mobile UI development and improved app performance and stability.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Skills</h2>
+          <p>Core technologies and tools</p>
+        </div>
+        <div class="tags">
+          <span class="tag"><i class="devicon-flutter-plain"></i> Flutter</span>
+          <span class="tag"><i class="devicon-javascript-plain"></i> JavaScript</span>
+          <span class="tag"><i class="devicon-nodejs-plain"></i> Node.js</span>
+          <span class="tag"><i class="devicon-python-plain"></i> Python</span>
+          <span class="tag"><i class="devicon-postgresql-plain"></i> PostgreSQL</span>
+          <span class="tag"><i class="devicon-git-plain"></i> Git</span>
+          <span class="tag"><i class="devicon-nextjs-original"></i> Next.js</span>
+          <span class="tag ai-tag"><span class="ai-logo">AI</span> AI</span>
+          <span class="tag"><i class="devicon-jenkins-line"></i> CI/CD</span>
+          <span class="tag"><i class="devicon-ffmpeg-plain"></i> Media Encoding</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Projects</h2>
+          <p>Selected work</p>
+        </div>
+        <div class="grid cards">
+          <article class="card project-card">
+            <h3>Ticket Management System</h3>
+            <div class="card-divider"></div>
+            <p>End-to-end ticketing workflow with role-based access and analytics.</p>
+            <p class="stack">Tech: Flutter, Node.js, PostgreSQL</p>
+          </article>
+          <article class="card project-card">
+            <h3>Video Converter System (Dual GPU)</h3>
+            <div class="card-divider"></div>
+            <p>High-throughput media conversion pipeline optimized for dual GPU processing.</p>
+            <p class="stack">Tech: Python, Media Encoding, CI/CD</p>
+          </article>
+          <article class="card project-card">
+            <h3>Affiliate System Dashboard</h3>
+            <div class="card-divider"></div>
+            <p>Real-time analytics and management suite for affiliate performance.</p>
+            <p class="stack">Tech: JavaScript, Node.js, PostgreSQL</p>
+          </article>
+          <article class="card project-card">
+            <h3>FundzBot</h3>
+            <div class="card-divider"></div>
+            <p>AI chatbot for fintech workflows and customer support automation.</p>
+            <p class="stack">Tech: Python, Node.js, Flutter</p>
+          </article>
+          <article class="card project-card">
+            <h3>Everlink SDK</h3>
+            <div class="card-divider"></div>
+            <p>Developer SDK for secure integrations and modular service delivery.</p>
+            <p class="stack">Tech: JavaScript, Node.js, CI/CD</p>
+          </article>
+          <article class="card project-card">
+            <h3>Retail Workflow Solution</h3>
+            <div class="card-divider"></div>
+            <p>Mobile-first operations suite for inventory and order flow management.</p>
+            <p class="stack">Tech: Flutter, PostgreSQL</p>
+          </article>
+          <article class="card project-card">
+            <h3>Anime Streaming Platform</h3>
+            <div class="card-divider"></div>
+            <p>Streaming platform with optimized content delivery and user personalization.</p>
+            <p class="stack">Tech: JavaScript, Node.js, Media Encoding</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="education" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Education</h2>
+          <p>Academic background</p>
+        </div>
+        <div class="card">
+          <h3>B.Tech Computer Engineering</h3>
+          <p class="muted">Gandhinagar Institute of Technology · 2024</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Contact</h2>
+          <p>Let’s build something great</p>
+        </div>
+        <div class="grid contact-grid">
+          <div class="card">
+            <h3>Email</h3>
+            <p>pratham.bhavsar@email.com</p>
+          </div>
+          <div class="card">
+            <h3>Phone</h3>
+            <p>+91 90000 00000</p>
+          </div>
+          <div class="card">
+            <h3>Location</h3>
+            <p>Gandhinagar, India</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© 2026 Pratham Bhavsar. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
