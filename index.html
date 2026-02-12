@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pratham Bhavsar | Developer Portfolio</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -111,16 +111,16 @@
           <p>Core technologies and tools</p>
         </div>
         <div class="tags">
-          <span class="tag"><i class="devicon-flutter-plain"></i> Flutter</span>
-          <span class="tag"><i class="devicon-javascript-plain"></i> JavaScript</span>
-          <span class="tag"><i class="devicon-nodejs-plain"></i> Node.js</span>
-          <span class="tag"><i class="devicon-python-plain"></i> Python</span>
-          <span class="tag"><i class="devicon-postgresql-plain"></i> PostgreSQL</span>
-          <span class="tag"><i class="devicon-git-plain"></i> Git</span>
-          <span class="tag"><i class="devicon-nextjs-original"></i> Next.js</span>
-          <span class="tag ai-tag"><span class="ai-logo">AI</span> AI</span>
-          <span class="tag"><i class="devicon-jenkins-line"></i> CI/CD</span>
-          <span class="tag"><i class="devicon-ffmpeg-plain"></i> Media Encoding</span>
+          <span class="tag"><i data-lucide="smartphone"></i> Flutter</span>
+          <span class="tag"><i data-lucide="braces"></i> JavaScript</span>
+          <span class="tag"><i data-lucide="hexagon"></i> Node.js</span>
+          <span class="tag"><i data-lucide="scroll-text"></i> Python</span>
+          <span class="tag"><i data-lucide="database"></i> PostgreSQL</span>
+          <span class="tag"><i data-lucide="git-branch"></i> Git</span>
+          <span class="tag"><i data-lucide="triangle"></i> Next.js</span>
+          <span class="tag ai-tag"><i data-lucide="sparkles"></i> AI</span>
+          <span class="tag"><i data-lucide="workflow"></i> CI/CD</span>
+          <span class="tag"><i data-lucide="film"></i> Media Encoding</span>
         </div>
       </div>
     </section>
@@ -137,6 +137,7 @@
             <div class="card-divider"></div>
             <p>End-to-end ticketing workflow with role-based access and analytics.</p>
             <p class="stack">Tech: Flutter, Node.js, PostgreSQL</p>
+            <a href="https://sendesk.splin.app/" target="_blank" rel="noopener noreferrer" class="project-link">View Project <i data-lucide="external-link"></i></a>
           </article>
           <article class="card project-card">
             <h3>Video Converter System (Dual GPU)</h3>
@@ -149,6 +150,7 @@
             <div class="card-divider"></div>
             <p>Real-time analytics and management suite for affiliate performance.</p>
             <p class="stack">Tech: JavaScript, Node.js, PostgreSQL</p>
+            <a href="https://affiliatesys.splin.app/" target="_blank" rel="noopener noreferrer" class="project-link">View Project <i data-lucide="external-link"></i></a>
           </article>
           <article class="card project-card">
             <h3>FundzBot</h3>
@@ -161,6 +163,7 @@
             <div class="card-divider"></div>
             <p>Developer SDK for secure integrations and modular service delivery.</p>
             <p class="stack">Tech: JavaScript, Node.js, CI/CD</p>
+            <a href="https://www.everlink.co/" target="_blank" rel="noopener noreferrer" class="project-link">View Project <i data-lucide="external-link"></i></a>
           </article>
           <article class="card project-card">
             <h3>Retail Workflow Solution</h3>
@@ -200,15 +203,15 @@
         <div class="grid contact-grid">
           <div class="card">
             <h3>Email</h3>
-            <p>pratham.bhavsar@email.com</p>
+            <p><a href="mailto:pratham.bhavsar501@gmail.com" class="contact-link">pratham.bhavsar501@gmail.com</a></p>
           </div>
           <div class="card">
             <h3>Phone</h3>
-            <p>+91 90000 00000</p>
+            <p><a href="tel:+918490088684" class="contact-link">+91 8490088684</a></p>
           </div>
           <div class="card">
             <h3>Location</h3>
-            <p>Gandhinagar, India</p>
+            <p>Ahmedabad, India</p>
           </div>
         </div>
       </div>
@@ -217,10 +220,11 @@
 
   <footer class="footer">
     <div class="container">
-      <p>© 2026 Pratham Bhavsar. All rights reserved.</p>
+      <p>© <span id="currentYear"></span> Pratham Bhavsar. All rights reserved.</p>
     </div>
   </footer>
 
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="script.js"></script>
 </body>
 </html>

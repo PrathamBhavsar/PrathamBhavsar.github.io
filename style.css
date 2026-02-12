@@ -232,8 +232,13 @@ html[data-theme="light"] .navbar {
   margin-bottom: 28px;
 }
 
+.section-header h2 {
+  margin: 0;
+}
+
 .section-header p {
   color: var(--muted);
+  margin: 0;
 }
 
 .card {
@@ -295,21 +300,14 @@ html[data-theme="light"] .navbar {
 }
 
 .tag i {
-  font-size: 1rem;
-  color: var(--accent);
-}
-
-.ai-logo {
   width: 18px;
   height: 18px;
-  border-radius: 6px;
-  border: 1px solid var(--accent);
   color: var(--accent);
-  display: grid;
-  place-items: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  line-height: 1;
+  stroke-width: 2;
+}
+
+.ai-tag i {
+  color: var(--accent);
 }
 
 .stack {
@@ -318,8 +316,39 @@ html[data-theme="light"] .navbar {
   font-size: 0.9rem;
 }
 
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: gap 0.2s ease;
+}
+
+.project-link:hover {
+  gap: 10px;
+}
+
+.project-link i {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
 .contact-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.contact-link {
+  color: var(--accent);
+  transition: opacity 0.2s ease;
+}
+
+.contact-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
 }
 
 .footer {

@@ -3,6 +3,12 @@ const menuToggle = document.getElementById("menuToggle");
 const mobileMenu = document.getElementById("mobileMenu");
 const root = document.documentElement;
 
+// Initialize Lucide icons
+lucide.createIcons();
+
+// Set current year in footer
+document.getElementById("currentYear").textContent = new Date().getFullYear();
+
 const storedTheme = localStorage.getItem("theme");
 if (storedTheme) {
   root.setAttribute("data-theme", storedTheme);
