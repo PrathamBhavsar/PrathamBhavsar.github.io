@@ -1,0 +1,72 @@
+[
+  {
+    "slug": "gaming-zone",
+    "title": "Gaming Zone",
+    "one_liner": "Multi-tenant booking and billing OS for gaming cafés.",
+    "role": "product",
+    "spec": ["308 Dart files", "97 TS files", "20 backend modules", "72 screens"],
+    "stack": ["Flutter", "Riverpod", "Bun", "PostgreSQL", "Redis"],
+    "note": "Player app, admin dashboard and a per-station PC agent that keeps billing correct through a network outage.",
+    "media": { "aspect": "phone", "demo": null, "poster": null },
+    "links": [
+      { "kind": "source", "label": "gz_app", "href": "https://github.com/PrathamBhavsar/gz_app" }
+    ]
+  },
+  {
+    "slug": "getnauti",
+    "title": "Companion AI",
+    "one_liner": "AI companion chat, character creation and image generation on mobile.",
+    "role": "client",
+    "spec": ["764 Dart files", "75 screens", "iOS + Android", "Next.js web companion"],
+    "stack": ["Flutter", "Riverpod", "Dio", "WebSockets"],
+    "note": "Character discovery, group chat, a text-to-image studio and a credit economy, all behind an age gate.",
+    "media": { "aspect": "phone", "demo": null, "poster": null },
+    "links": []
+  },
+  {
+    "slug": "easy-mech",
+    "title": "Easy Mech",
+    "one_liner": "Roadside assistance marketplace — owners, mechanics, dispatch, live tracking.",
+    "role": "client",
+    "spec": ["474 Dart files", "3 roles", "15 feature areas", "live map dispatch"],
+    "stack": ["Flutter", "Riverpod", "Freezed", "Mapbox"],
+    "note": "Near-typeless onboarding by camera, built in parallel against a live backend that was still being written.",
+    "media": { "aspect": "phone", "demo": null, "poster": null },
+    "links": []
+  },
+  {
+    "slug": "affiliate",
+    "title": "Affiliate Platform",
+    "one_liner": "Click-to-commission tracking, from embedded tracker to payout.",
+    "role": "client",
+    "spec": ["23 backend modules", "28 tables", "3 roles", "multi-currency"],
+    "stack": ["Next.js", "Bun", "Elysia", "PostgreSQL"],
+    "note": "A public ingestion endpoint that cannot lose a conversion, because a lost conversion is money nobody gets paid.",
+    "media": { "aspect": "desktop", "demo": null, "poster": null },
+    "links": []
+  },
+  {
+    "slug": "perchance",
+    "title": "Ledger",
+    "one_liner": "A dark, document-grade UI for an AI generation platform.",
+    "role": "client",
+    "spec": ["150 TS files", "10 routes", "design + motion system", "no stub pages"],
+    "stack": ["React", "TypeScript", "Vite", "Tailwind"],
+    "note": "Pick a base model and a LoRA once; that choice follows you into every tool on the platform.",
+    "media": { "aspect": "desktop", "demo": null, "poster": null },
+    "links": []
+  },
+  {
+    "slug": "video-pipeline",
+    "title": "Video Encoding Pipeline",
+    "one_liner": "Batch MP4 → adaptive HLS, with validation that catches broken output.",
+    "role": "product",
+    "spec": ["4 tools", "dual-GPU NVENC", "scene fragmenter", "OCR subtitles"],
+    "stack": ["Python", "FFmpeg", "NVENC", "Tesseract"],
+    "note": "Enumerates each GPU's real encode capability, then runs two codec ladders on two cards at once.",
+    "media": { "aspect": "desktop", "demo": null, "poster": null },
+    "links": [
+      { "kind": "source", "label": "m3u8-converter", "href": "https://github.com/PrathamBhavsar/m3u8-converter" }
+    ]
+  }
+]

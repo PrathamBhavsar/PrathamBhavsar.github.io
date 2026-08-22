@@ -1,0 +1,24 @@
+name: link check
+on:
+  push:
+    paths: ["projects.json"]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every link in projects.json must answer
+        run: |
+          fail=0
+          for url in $(grep -o 'https://[^"]*' projects.json | sort -u); do
+            code=$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 15 "$url" || echo 000)
+            case "$code" in
+              2*|3*) echo "  ok  $code  $url" ;;
+              *)     echo "DEAD  $code  $url"; fail=1 ;;
+            esac
+          done
+          exit $fail
