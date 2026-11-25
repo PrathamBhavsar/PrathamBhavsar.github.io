@@ -105,6 +105,11 @@
     },
     "links": [
       {
+        "kind": "live",
+        "label": "site",
+        "href": "https://prathambhavsar.github.io/bunfiiliate/"
+      },
+      {
         "kind": "source",
         "label": "bunfiiliate",
         "href": "https://github.com/PrathamBhavsar/bunfiiliate"
