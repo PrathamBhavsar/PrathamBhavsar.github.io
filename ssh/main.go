@@ -13,10 +13,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
@@ -24,6 +26,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/charmbracelet/wish/ratelimiter"
+	"github.com/muesli/termenv"
 	"golang.org/x/time/rate"
 )
 
@@ -50,7 +53,7 @@ func main() {
 		wish.WithMiddleware(
 			bubbletea.Middleware(func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 				pty, _, _ := s.Pty()
-				return newModel(site, pty.Window.Width, pty.Window.Height), []tea.ProgramOption{tea.WithAltScreen(), tea.WithMouseCellMotion()}
+				return newModel(site, sessionRenderer(s), pty.Window.Width, pty.Window.Height), []tea.ProgramOption{tea.WithAltScreen(), tea.WithMouseCellMotion()}
 			}),
 			activeterm.Middleware(), // a PTY is required; `ssh host cmd` is refused
 			ratelimiter.Middleware(limiter),
@@ -74,4 +77,44 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(ctx)
+}
+
+// sessionEnv exposes the SSH client's environment (plus its PTY's TERM) to termenv.
+type sessionEnv struct{ kv map[string]string }
+
+func (e sessionEnv) Environ() []string {
+	out := make([]string, 0, len(e.kv))
+	for k, v := range e.kv {
+		out = append(out, k+"="+v)
+	}
+	return out
+}
+func (e sessionEnv) Getenv(k string) string { return e.kv[k] }
+
+// sessionRenderer builds a colour renderer for this visitor's terminal.
+// It deliberately avoids wish's MakeRenderer, which asks the client for its
+// background colour and waits for an answer. Many SSH clients don't forward
+// COLORTERM, so a known TERM is taken as 256 colours (the safe floor and cap)
+// and truecolor is used only when the client says it can.
+func sessionRenderer(s ssh.Session) *lipgloss.Renderer {
+	env := map[string]string{}
+	for _, kv := range s.Environ() {
+		if k, v, ok := strings.Cut(kv, "="); ok {
+			env[k] = v
+		}
+	}
+	if pty, _, ok := s.Pty(); ok && env["TERM"] == "" {
+		env["TERM"] = pty.Term
+	}
+	r := lipgloss.NewRenderer(s, termenv.WithEnvironment(sessionEnv{env}), termenv.WithUnsafe(), termenv.WithColorCache(true))
+	term, ct := env["TERM"], env["COLORTERM"]
+	switch {
+	case term == "" || term == "dumb":
+		r.SetColorProfile(termenv.Ascii)
+	case ct == "truecolor" || ct == "24bit" || strings.Contains(term, "truecolor") || strings.Contains(term, "direct"):
+		r.SetColorProfile(termenv.TrueColor)
+	default:
+		r.SetColorProfile(termenv.ANSI256)
+	}
+	return r
 }

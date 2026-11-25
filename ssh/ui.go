@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/muesli/termenv"
 )
 
 const (
@@ -24,24 +25,53 @@ const (
 	cOK     = lipgloss.Color("#00c853")
 )
 
-var (
-	sFG     = lipgloss.NewStyle().Foreground(cFG)
-	sBold   = lipgloss.NewStyle().Foreground(cFG).Bold(true)
-	sDim    = lipgloss.NewStyle().Foreground(cDim)
-	sMute   = lipgloss.NewStyle().Foreground(cMute)
-	sAccent = lipgloss.NewStyle().Foreground(cAccent)
-	sTeal   = lipgloss.NewStyle().Foreground(cTeal)
-	sOK     = lipgloss.NewStyle().Foreground(cOK)
-	sSel    = lipgloss.NewStyle().Foreground(cBG).Background(cFG).Bold(true)
-)
+// theme holds every style, built from the per-session renderer so colours follow
+// the visitor's terminal instead of the server's (which has no TTY and would
+// render everything as plain text).
+type theme struct {
+	fg, bold, dim, mute, accent, teal, ok, sel lipgloss.Style
+	border                                     lipgloss.Color
+	base                                       string // SGR for the page background + default foreground
+}
 
-func chip(text string, bg lipgloss.Color) string {
-	return lipgloss.NewStyle().Foreground(cBG).Background(bg).Bold(true).Render(" " + text + " ")
+func newTheme(r *lipgloss.Renderer) theme {
+	st := func(c lipgloss.Color) lipgloss.Style { return r.NewStyle().Foreground(c) }
+	p := r.ColorProfile()
+	base := ""
+	if p != termenv.Ascii {
+		base = termenv.CSI + p.Color(string(cBG)).Sequence(true) + "m" + termenv.CSI + p.Color(string(cFG)).Sequence(false) + "m"
+	}
+	return theme{
+		fg: st(cFG), bold: st(cFG).Bold(true), dim: st(cDim), mute: st(cMute),
+		accent: st(cAccent), teal: st(cTeal), ok: st(cOK),
+		sel:    r.NewStyle().Foreground(cBG).Background(cFG).Bold(true),
+		border: cBorder, base: base,
+	}
+}
+
+func (t theme) chip(text string, bg lipgloss.Color) string {
+	return t.fg.UnsetForeground().Foreground(cBG).Background(bg).Bold(true).Render(" " + text + " ")
 }
 
 // link renders text as an OSC 8 hyperlink (terminals without support show plain text).
-func link(url, text string) string {
-	return "\x1b]8;;" + url + "\x1b\\" + sAccent.Underline(true).Render(text) + "\x1b]8;;\x1b\\"
+func (t theme) link(url, text string) string {
+	return "\x1b]8;;" + url + "\x1b\\" + t.accent.Underline(true).Render(text) + "\x1b]8;;\x1b\\"
+}
+
+// paint gives the whole screen the dark background: every SGR reset is followed by
+// the base colours again, and each row is padded to the full width.
+func (t theme) paint(view string, w int) string {
+	if t.base == "" {
+		return view
+	}
+	lines := strings.Split(view, "\n")
+	for i, l := range lines {
+		l = strings.ReplaceAll(l, "\x1b[0m", "\x1b[0m"+t.base)
+		l = strings.ReplaceAll(l, "\x1b[m", "\x1b[m"+t.base)
+		pad := max(0, w-lipgloss.Width(l))
+		lines[i] = t.base + l + strings.Repeat(" ", pad) + "\x1b[0m"
+	}
+	return strings.Join(lines, "\n")
 }
 
 func short(url string) string {
@@ -66,6 +96,7 @@ const (
 )
 
 type model struct {
+	t         theme
 	site      *Site
 	w, h      int
 	tab       tab
@@ -77,14 +108,14 @@ type model struct {
 	help      bool
 }
 
-func newModel(s *Site, w, h int) model {
+func newModel(s *Site, r *lipgloss.Renderer, w, h int) model {
 	if w < 20 {
 		w = 100
 	}
 	if h < 8 {
 		h = 30
 	}
-	return model{site: s, w: w, h: h, scroll: map[string]int{}}
+	return model{t: newTheme(r), site: s, w: w, h: h, scroll: map[string]int{}}
 }
 
 func (m model) Init() tea.Cmd { return nil }
@@ -258,20 +289,20 @@ func (m model) View() string {
 	default:
 		main = m.linksView(m.w, body)
 	}
-	return m.topBar(m.w) + "\n" + main + "\n" + m.statusLine(m.w)
+	return m.t.paint(m.topBar(m.w)+"\n"+main+"\n"+m.statusLine(m.w), m.w)
 }
 
 func (m model) topBar(w int) string {
-	left := chip("pb", cAccent) + " "
+	left := m.t.chip("pb", cAccent) + " "
 	for i, n := range tabNames {
 		label := fmt.Sprintf(" %d %s ", i+1, n)
 		if tab(i) == m.tab {
-			left += sSel.Render(label)
+			left += m.t.sel.Render(label)
 		} else {
-			left += sDim.Render(label)
+			left += m.t.dim.Render(label)
 		}
 	}
-	right := sBold.Render(m.site.Profile.Name) + sDim.Render("  "+m.site.Profile.Location+" ") + sOK.Render("●") + sDim.Render(" open to work")
+	right := m.t.bold.Render(m.site.Profile.Name) + m.t.dim.Render("  "+m.site.Profile.Location+" ") + m.t.ok.Render("●") + m.t.dim.Render(" open to work")
 	return spread(left, right, w)
 }
 
@@ -288,11 +319,11 @@ func (m model) statusLine(w int) string {
 	case m.tab != tabProjects:
 		hints = [][2]string{{"↑↓", "scroll"}, {"[ ]", "tabs"}, {"?", "help"}, {"q", "quit"}}
 	}
-	left := chip(mode, cAccent) + " "
+	left := m.t.chip(mode, cAccent) + " "
 	for _, h := range hints {
-		left += sBold.Render(h[0]) + sDim.Render(" "+h[1]) + "   "
+		left += m.t.bold.Render(h[0]) + m.t.dim.Render(" "+h[1]) + "   "
 	}
-	return spread(left, sDim.Render("ssh ssh.prathambhavsar.in"), w)
+	return spread(left, m.t.dim.Render("ssh ssh.prathambhavsar.in"), w)
 }
 
 func spread(left, right string, w int) string {
@@ -304,15 +335,15 @@ func spread(left, right string, w int) string {
 }
 
 // panel draws a hairline box with an inset title and optional right-aligned meta.
-func panel(title, meta string, lines []string, w, h int, focused bool) string {
+func (m model) panel(title, meta string, lines []string, w, h int, focused bool) string {
 	if w < 8 || h < 3 {
 		return ""
 	}
-	bc, tc := cBorder, sDim
+	bc, tc := cBorder, m.t.dim
 	if focused {
-		bc, tc = cAccent, sBold
+		bc, tc = cAccent, m.t.bold
 	}
-	b := lipgloss.NewStyle().Foreground(bc)
+	b := m.t.fg.Foreground(bc)
 	inner := w - 2
 	t := " " + title + " "
 	mt := ""
@@ -320,7 +351,7 @@ func panel(title, meta string, lines []string, w, h int, focused bool) string {
 		mt = " " + meta + " "
 	}
 	fill := max(0, inner-1-lipgloss.Width(t)-lipgloss.Width(mt)-1)
-	top := b.Render("┌─") + tc.Render(t) + b.Render(strings.Repeat("─", fill)) + sDim.Render(mt) + b.Render("─┐")
+	top := b.Render("┌─") + tc.Render(t) + b.Render(strings.Repeat("─", fill)) + m.t.dim.Render(mt) + b.Render("─┐")
 	out := []string{top}
 	for i := 0; i < h-2; i++ {
 		l := ""
@@ -365,11 +396,11 @@ func (m model) projectsView(w, h int) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, m.listPanel(listW, h), m.readerPanel(w-listW-sideW, h), m.detailPanel(sideW, h))
 }
 
-func roleChip(role string) string {
+func (m model) roleChip(role string) string {
 	if role == "client" {
-		return chip("CLIENT", cTeal)
+		return m.t.chip("CLIENT", cTeal)
 	}
-	return chip("OWN", cAccent)
+	return m.t.chip("OWN", cAccent)
 }
 
 func (m model) listPanel(w, h int) string {
@@ -377,9 +408,9 @@ func (m model) listPanel(w, h int) string {
 	if m.filtering || m.filter != "" {
 		cur := ""
 		if m.filtering {
-			cur = sAccent.Render("█")
+			cur = m.t.accent.Render("█")
 		}
-		lines = append(lines, sAccent.Render("/ ")+sFG.Render(m.filter)+cur, "")
+		lines = append(lines, m.t.accent.Render("/ ")+m.t.fg.Render(m.filter)+cur, "")
 	}
 	v := m.visible()
 	cursor := m.clampedCursor()
@@ -390,82 +421,82 @@ func (m model) listPanel(w, h int) string {
 		tag := p.Role
 		gap := strings.Repeat(" ", max(1, inner-lipgloss.Width(name)-lipgloss.Width(tag)-1))
 		if i == cursor {
-			lines = append(lines, sSel.Render(ansi.Truncate(name+gap+tag+" ", inner, "")))
-			lines = append(lines, sDim.Render(" "+ansi.Truncate(strings.Join(p.Stack[:min(3, len(p.Stack))], " · "), inner-1, "…")))
+			lines = append(lines, m.t.sel.Render(ansi.Truncate(name+gap+tag+" ", inner, "")))
+			lines = append(lines, m.t.dim.Render(" "+ansi.Truncate(strings.Join(p.Stack[:min(3, len(p.Stack))], " · "), inner-1, "…")))
 		} else {
-			lines = append(lines, sBold.Render(name)+sMute.Render(gap+tag))
+			lines = append(lines, m.t.bold.Render(name)+m.t.mute.Render(gap+tag))
 		}
 	}
 	if len(v) == 0 {
-		lines = append(lines, sDim.Render(" no matches"))
+		lines = append(lines, m.t.dim.Render(" no matches"))
 	}
-	return panel("Projects", fmt.Sprintf("%d", len(v)), lines, w, h, m.focus == paneList)
+	return m.panel("Projects", fmt.Sprintf("%d", len(v)), lines, w, h, m.focus == paneList)
 }
 
 func (m model) readerPanel(w, h int) string {
 	p, ok := m.current()
 	if !ok {
-		return panel("Case study", "", []string{sDim.Render("nothing selected")}, w, h, m.focus == paneBody)
+		return m.panel("Case study", "", []string{m.t.dim.Render("nothing selected")}, w, h, m.focus == paneBody)
 	}
 	cw := min(w-6, 92)
-	lines := []string{sBold.Render(p.Title) + "  " + roleChip(p.Role), ""}
+	lines := []string{m.t.bold.Render(p.Title) + "  " + m.roleChip(p.Role), ""}
 	for _, x := range strings.Split(wrap(p.Line, cw), "\n") {
-		lines = append(lines, sFG.Render(x))
+		lines = append(lines, m.t.fg.Render(x))
 	}
 	if p.Note != "" {
 		lines = append(lines, "")
 		for _, x := range strings.Split(wrap(p.Note, cw), "\n") {
-			lines = append(lines, sDim.Render(x))
+			lines = append(lines, m.t.dim.Render(x))
 		}
 	}
 	for _, block := range strings.Split(strings.TrimSpace(p.Content), "\n\n") {
 		bl := strings.Split(block, "\n")
 		switch {
 		case strings.HasPrefix(block, "## "):
-			lines = append(lines, "", sAccent.Bold(true).Render(strip(block[3:])))
+			lines = append(lines, "", m.t.accent.Bold(true).Render(strip(block[3:])))
 		case strings.HasPrefix(bl[0], "- "):
 			lines = append(lines, "")
 			for _, l := range bl {
 				for i, x := range strings.Split(wrap(strip(strings.TrimPrefix(l, "- ")), cw-2), "\n") {
 					pre := "  "
 					if i == 0 {
-						pre = sAccent.Render("• ")
+						pre = m.t.accent.Render("• ")
 					}
-					lines = append(lines, pre+sFG.Render(x))
+					lines = append(lines, pre+m.t.fg.Render(x))
 				}
 			}
 		default:
 			lines = append(lines, "")
 			for _, x := range strings.Split(wrap(strip(strings.Join(bl, " ")), cw), "\n") {
-				lines = append(lines, sFG.Render(x))
+				lines = append(lines, m.t.fg.Render(x))
 			}
 		}
 	}
 	vis, meta := m.window(lines, "p:"+p.Slug, h-2)
-	return panel(p.Title, meta, vis, w, h, m.focus == paneBody)
+	return m.panel(p.Title, meta, vis, w, h, m.focus == paneBody)
 }
 
 func (m model) detailPanel(w, h int) string {
 	p, ok := m.current()
 	if !ok {
-		return panel("Details", "", nil, w, h, false)
+		return m.panel("Details", "", nil, w, h, false)
 	}
-	l := []string{sDim.Render("scope")}
+	l := []string{m.t.dim.Render("scope")}
 	for _, s := range p.Spec {
-		l = append(l, sFG.Render(s))
+		l = append(l, m.t.fg.Render(s))
 	}
-	l = append(l, "", sDim.Render("stack"))
+	l = append(l, "", m.t.dim.Render("stack"))
 	for _, s := range p.Stack {
-		l = append(l, sTeal.Render(s))
+		l = append(l, m.t.teal.Render(s))
 	}
-	l = append(l, "", sDim.Render("links"))
+	l = append(l, "", m.t.dim.Render("links"))
 	if len(p.Links) == 0 {
-		l = append(l, sMute.Render("private, no public link"))
+		l = append(l, m.t.mute.Render("private, no public link"))
 	}
 	for _, k := range p.Links {
-		l = append(l, chip(strings.ToUpper(k.Kind), cOK), link(k.Href, short(k.Href)))
+		l = append(l, m.t.chip(strings.ToUpper(k.Kind), cOK), m.t.link(k.Href, short(k.Href)))
 	}
-	return panel("Details", "", l, w, h, false)
+	return m.panel("Details", "", l, w, h, false)
 }
 
 /* ---------- about / links / help ---------- */
@@ -475,12 +506,12 @@ func (m model) aboutView(w, h int) string {
 		return m.aboutBody(w, h)
 	}
 	pr := m.site.Profile
-	l := []string{sBold.Render(pr.Name), sDim.Render(pr.Tagline), sDim.Render(pr.Location), "",
-		sDim.Render("email"), link("mailto:"+pr.Email, pr.Email), ""}
+	l := []string{m.t.bold.Render(pr.Name), m.t.dim.Render(pr.Tagline), m.t.dim.Render(pr.Location), "",
+		m.t.dim.Render("email"), m.t.link("mailto:"+pr.Email, pr.Email), ""}
 	for _, k := range pr.Links {
-		l = append(l, sDim.Render(strings.ToLower(k.Label)), link(k.URL, short(k.URL)), "")
+		l = append(l, m.t.dim.Render(strings.ToLower(k.Label)), m.t.link(k.URL, short(k.URL)), "")
 	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, panel("Profile", "", l, 38, h, false), m.aboutBody(w-38, h))
+	return lipgloss.JoinHorizontal(lipgloss.Top, m.panel("Profile", "", l, 38, h, false), m.aboutBody(w-38, h))
 }
 
 func (m model) aboutBody(w, h int) string {
@@ -489,48 +520,48 @@ func (m model) aboutBody(w, h int) string {
 	var l []string
 	for _, p := range pr.About {
 		for _, x := range strings.Split(wrap(p, cw), "\n") {
-			l = append(l, sFG.Render(x))
+			l = append(l, m.t.fg.Render(x))
 		}
 		l = append(l, "")
 	}
-	l = append(l, sAccent.Bold(true).Render("Skills"), "")
+	l = append(l, m.t.accent.Bold(true).Render("Skills"), "")
 	for _, x := range strings.Split(wrap(strings.Join(pr.Skills, "  ·  "), cw), "\n") {
-		l = append(l, sTeal.Render(x))
+		l = append(l, m.t.teal.Render(x))
 	}
-	l = append(l, "", sAccent.Bold(true).Render("Experience"))
+	l = append(l, "", m.t.accent.Bold(true).Render("Experience"))
 	for _, e := range pr.Experience {
-		org := sBold.Render(e.Org)
+		org := m.t.bold.Render(e.Org)
 		if e.URL != "" {
-			org = link(e.URL, e.Org)
+			org = m.t.link(e.URL, e.Org)
 		}
-		l = append(l, "", org+sDim.Render("  "+e.Role+"  ·  "+e.When))
+		l = append(l, "", org+m.t.dim.Render("  "+e.Role+"  ·  "+e.When))
 		for _, x := range strings.Split(wrap(e.Desc, cw), "\n") {
-			l = append(l, sFG.Render(x))
+			l = append(l, m.t.fg.Render(x))
 		}
 	}
-	l = append(l, "", sAccent.Bold(true).Render("Education"), "")
+	l = append(l, "", m.t.accent.Bold(true).Render("Education"), "")
 	for _, e := range pr.Education {
-		l = append(l, sBold.Render(e.Org)+sDim.Render("  "+e.Role+"  ·  "+e.When))
+		l = append(l, m.t.bold.Render(e.Org)+m.t.dim.Render("  "+e.Role+"  ·  "+e.When))
 	}
 	vis, meta := m.window(l, "t:1", h-2)
-	return panel("About", meta, vis, w, h, true)
+	return m.panel("About", meta, vis, w, h, true)
 }
 
 func (m model) linksView(w, h int) string {
 	pr := m.site.Profile
 	var l []string
 	row := func(label, text, url string) {
-		l = append(l, sDim.Render(fmt.Sprintf("%-14s", label))+link(url, text))
+		l = append(l, m.t.dim.Render(fmt.Sprintf("%-14s", label))+m.t.link(url, text))
 	}
 	row("email", pr.Email, "mailto:"+pr.Email)
 	for _, k := range pr.Links {
 		row(strings.ToLower(k.Label), k.URL, k.URL)
 	}
-	l = append(l, sDim.Render(fmt.Sprintf("%-14s", "location"))+sFG.Render(pr.Location))
-	l = append(l, "", sAccent.Bold(true).Render("Projects"), "")
+	l = append(l, m.t.dim.Render(fmt.Sprintf("%-14s", "location"))+m.t.fg.Render(pr.Location))
+	l = append(l, "", m.t.accent.Bold(true).Render("Projects"), "")
 	for _, p := range m.site.Projects {
 		if len(p.Links) == 0 {
-			l = append(l, sDim.Render(fmt.Sprintf("%-14s", strings.ToLower(p.Title)))+sMute.Render("private"))
+			l = append(l, m.t.dim.Render(fmt.Sprintf("%-14s", strings.ToLower(p.Title)))+m.t.mute.Render("private"))
 			continue
 		}
 		for i, k := range p.Links {
@@ -538,12 +569,12 @@ func (m model) linksView(w, h int) string {
 			if i == 0 {
 				name = strings.ToLower(p.Title)
 			}
-			l = append(l, sDim.Render(fmt.Sprintf("%-14s", name))+link(k.Href, k.Href))
+			l = append(l, m.t.dim.Render(fmt.Sprintf("%-14s", name))+m.t.link(k.Href, k.Href))
 		}
 	}
-	l = append(l, "", sMute.Render("Links are clickable in terminals that support it (iTerm2, kitty, WezTerm, Windows Terminal)."))
+	l = append(l, "", m.t.mute.Render("Links are clickable in terminals that support it (iTerm2, kitty, WezTerm, Windows Terminal)."))
 	vis, meta := m.window(l, "t:2", h-2)
-	return panel("Links", meta, vis, w, h, true)
+	return m.panel("Links", meta, vis, w, h, true)
 }
 
 func (m model) helpPanel(w, h int) string {
@@ -560,10 +591,10 @@ func (m model) helpPanel(w, h int) string {
 	}
 	var l []string
 	for _, r := range rows {
-		l = append(l, sBold.Render(fmt.Sprintf("%-16s", r[0]))+sDim.Render(r[1]))
+		l = append(l, m.t.bold.Render(fmt.Sprintf("%-16s", r[0]))+m.t.dim.Render(r[1]))
 	}
-	l = append(l, "", sMute.Render("press any key to close"))
-	return panel("Help", "", l, w, h, true)
+	l = append(l, "", m.t.mute.Render("press any key to close"))
+	return m.panel("Help", "", l, w, h, true)
 }
 
 /* ---------- text helpers ---------- */

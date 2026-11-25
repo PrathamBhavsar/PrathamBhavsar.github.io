@@ -1,6 +1,6 @@
 # Portfolio over SSH
 
-The same projects as the website, as a terminal app: `ssh <host>`. No shell, no exec,
+The same projects as the website, as a terminal app: `ssh ssh.prathambhavsar.in`. No shell, no exec,
 no forwarding, no password or key. Go + [Wish](https://github.com/charmbracelet/wish) +
 Bubble Tea.
 
