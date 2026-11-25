@@ -139,6 +139,34 @@
     "links": []
   },
   {
+    "slug": "beacon",
+    "title": "Beacon",
+    "one_liner": "Control plane that runs scrapers and converters on home PCs and delivers their output to the content hubs.",
+    "role": "client",
+    "spec": [
+      "Go + React",
+      "150 Go files",
+      "19 migrations",
+      "agent + Python SDK"
+    ],
+    "stack": [
+      "Go",
+      "Echo",
+      "sqlc",
+      "PostgreSQL",
+      "React",
+      "Tailscale"
+    ],
+    "note": "Workers only talk to a local agent, the agent only runs a fixed list of commands, and every user write is audited.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/beacon/shot.webp",
+      "poster": "media/beacon/shot.webp",
+      "caption": "Local build with mock data and made-up source names."
+    },
+    "links": []
+  },
+  {
     "slug": "imagehub",
     "title": "ImageHub",
     "one_liner": "Content backend that imports scraped comics and galleries, stores them in R2 and pushes them out to many sites.",
@@ -193,68 +221,5 @@
       "caption": "Local build with mock data."
     },
     "links": []
-  },
-  {
-    "slug": "gaming-zone",
-    "title": "Gaming Zone",
-    "one_liner": "Multi-tenant booking and billing OS for gaming cafés.",
-    "role": "product",
-    "spec": [
-      "308 Dart files",
-      "97 TS files",
-      "20 backend modules",
-      "72 screens"
-    ],
-    "stack": [
-      "Flutter",
-      "Riverpod",
-      "Bun",
-      "PostgreSQL",
-      "Redis"
-    ],
-    "note": "Player app, admin dashboard and a per-station PC agent that keeps billing correct through a network outage.",
-    "media": {
-      "aspect": "phone",
-      "demo": null,
-      "poster": null
-    },
-    "links": [
-      {
-        "kind": "source",
-        "label": "gz_app",
-        "href": "https://github.com/PrathamBhavsar/gz_app"
-      }
-    ]
-  },
-  {
-    "slug": "video-pipeline",
-    "title": "Video Encoding Pipeline",
-    "one_liner": "Batch MP4 → adaptive HLS, with validation that catches broken output.",
-    "role": "product",
-    "spec": [
-      "4 tools",
-      "dual-GPU NVENC",
-      "scene fragmenter",
-      "OCR subtitles"
-    ],
-    "stack": [
-      "Python",
-      "FFmpeg",
-      "NVENC",
-      "Tesseract"
-    ],
-    "note": "Enumerates each GPU's real encode capability, then runs two codec ladders on two cards at once.",
-    "media": {
-      "aspect": "desktop",
-      "demo": null,
-      "poster": null
-    },
-    "links": [
-      {
-        "kind": "source",
-        "label": "m3u8-converter",
-        "href": "https://github.com/PrathamBhavsar/m3u8-converter"
-      }
-    ]
   }
 ]
