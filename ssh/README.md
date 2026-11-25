@@ -26,5 +26,10 @@ Needs a server whose port 22 is free (move your own sshd to another port first) 
 `deploy/install.sh` as root. The host key lives in `/opt/portfolio-ssh/host_ed25519`; keep it,
 or visitors get a "host key changed" warning after every redeploy.
 
+On Ubuntu 24.04 sshd is socket-activated, so `Port` in `sshd_config` is ignored. Move it with a
+drop-in instead (`/etc/systemd/system/ssh.socket.d/x.conf` with `ListenStream=` cleared, then
+`ListenStream=0.0.0.0:2222` and `[::]:2222`), open the port in ufw, and test a fresh connection
+before closing your current one.
+
 Limits: one new connection per IP every 2s (burst 5), 10 min idle timeout, 30 min per session,
 128 MB memory cap in the unit.
