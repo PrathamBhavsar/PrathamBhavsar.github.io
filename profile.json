@@ -1,0 +1,35 @@
+{
+  "name": "Pratham Bhavsar",
+  "tagline": "backend & full-stack engineer",
+  "location": "Ahmedabad, India",
+  "email": "pratham.bhavsar501@gmail.com",
+  "links": [
+    { "label": "Website", "url": "https://prathambhavsar.in" },
+    { "label": "GitHub", "url": "https://github.com/PrathamBhavsar" },
+    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/pratham-bhavsar/" },
+    { "label": "Nyxos", "url": "https://nyxos.in" }
+  ],
+  "about": [
+    "I started out writing Flutter apps and moved to backends because that's where the interesting problems were. These days I mostly write Rust (axum, SQLx) and Go, with Postgres underneath and React or Next.js on top.",
+    "Lately I've been building open-source tools I'd want to use myself: an affiliate engine, a self-hosted support inbox, a study tool, and a terminal workspace for running coding agents. Some client work sits next to those, mostly content-distribution systems."
+  ],
+  "skills": [
+    "Rust", "Go", "TypeScript", "React / Next.js", "PostgreSQL", "Python / FastAPI",
+    "Node / Bun", "Docker / systemd / Caddy", "CI/CD", "FFmpeg", "Flutter", "Git"
+  ],
+  "experience": [
+    { "org": "Pixel Gen", "role": "Software Development Engineer", "when": "08/2025 – now",
+      "desc": "Backend and web work, including the deploy pipeline, so releases don't need someone awake to babysit them." },
+    { "org": "Nyxos", "role": "Developer, client projects", "when": "now", "url": "https://nyxos.in",
+      "desc": "Part of a seven-person dev collective that takes on client work: backends, content pipelines and apps. Small teams, short cycles, shipped to production." },
+    { "org": "Prudent Corporate", "role": "Flutter Developer", "when": "09/2025 – 02/2026",
+      "desc": "Flutter apps on the money side, where a wrong number on screen turns into a support ticket." },
+    { "org": "Nautilus Techlabs", "role": "Flutter Developer", "when": "02/2024 – 09/2025",
+      "desc": "Shipped production Flutter apps for clients and wired AI chat features into them." },
+    { "org": "Exito Systems", "role": "Flutter Intern", "when": "11/2023 – 02/2024",
+      "desc": "First real codebase: fixing UI bugs and chasing down why a screen felt slow, one profile trace at a time." }
+  ],
+  "education": [
+    { "org": "Gandhinagar Institute of Technology", "role": "B.Tech Computer Engineering", "when": "2024" }
+  ]
+}

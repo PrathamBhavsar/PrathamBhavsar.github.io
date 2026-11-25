@@ -50,7 +50,7 @@ func main() {
 		wish.WithMiddleware(
 			bubbletea.Middleware(func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 				pty, _, _ := s.Pty()
-				return newModel(site, pty.Window.Width, pty.Window.Height), []tea.ProgramOption{tea.WithAltScreen()}
+				return newModel(site, pty.Window.Width, pty.Window.Height), []tea.ProgramOption{tea.WithAltScreen(), tea.WithMouseCellMotion()}
 			}),
 			activeterm.Middleware(), // a PTY is required; `ssh host cmd` is refused
 			ratelimiter.Middleware(limiter),

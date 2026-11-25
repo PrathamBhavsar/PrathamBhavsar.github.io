@@ -1,259 +1,575 @@
 package main
 
+// Look and feel follows the "Mono" theme from my Kestrel TUI: near-black,
+// hairline panels with inset titles, one blue accent, inverse-video selection,
+// chips for state, a top bar with tabs and a status line with key hints.
+
 import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+)
+
+const (
+	cBG     = lipgloss.Color("#0a0a0a")
+	cFG     = lipgloss.Color("#ededed")
+	cDim    = lipgloss.Color("#8a8a8a")
+	cMute   = lipgloss.Color("#555555")
+	cBorder = lipgloss.Color("#2a2a2a")
+	cAccent = lipgloss.Color("#3291ff")
+	cTeal   = lipgloss.Color("#50e3c2")
+	cOK     = lipgloss.Color("#00c853")
 )
 
 var (
-	accent = lipgloss.Color("#4f9cff")
-	green  = lipgloss.Color("#3ddc97")
-	muted  = lipgloss.Color("#7d8590")
-	text   = lipgloss.Color("#e6edf3")
-
-	titleSt  = lipgloss.NewStyle().Bold(true).Foreground(text)
-	accentSt = lipgloss.NewStyle().Foreground(accent)
-	mutedSt  = lipgloss.NewStyle().Foreground(muted)
-	greenSt  = lipgloss.NewStyle().Foreground(green)
-	h2St     = lipgloss.NewStyle().Bold(true).Foreground(accent).MarginTop(1)
-	selSt    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#0b0e14")).Background(accent)
+	sFG     = lipgloss.NewStyle().Foreground(cFG)
+	sBold   = lipgloss.NewStyle().Foreground(cFG).Bold(true)
+	sDim    = lipgloss.NewStyle().Foreground(cDim)
+	sMute   = lipgloss.NewStyle().Foreground(cMute)
+	sAccent = lipgloss.NewStyle().Foreground(cAccent)
+	sTeal   = lipgloss.NewStyle().Foreground(cTeal)
+	sOK     = lipgloss.NewStyle().Foreground(cOK)
+	sSel    = lipgloss.NewStyle().Foreground(cBG).Background(cFG).Bold(true)
 )
+
+func chip(text string, bg lipgloss.Color) string {
+	return lipgloss.NewStyle().Foreground(cBG).Background(bg).Bold(true).Render(" " + text + " ")
+}
+
+// link renders text as an OSC 8 hyperlink (terminals without support show plain text).
+func link(url, text string) string {
+	return "\x1b]8;;" + url + "\x1b\\" + sAccent.Underline(true).Render(text) + "\x1b]8;;\x1b\\"
+}
+
+func short(url string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(url, "https://"), "http://"), "www.")
+}
 
 type tab int
 
 const (
 	tabProjects tab = iota
 	tabAbout
-	tabContact
+	tabLinks
 )
 
-var tabNames = []string{"Projects", "About", "Contact"}
+var tabNames = []string{"Projects", "About", "Links"}
+
+type pane int
+
+const (
+	paneList pane = iota
+	paneBody
+)
 
 type model struct {
-	site    *Site
-	w, h    int
-	tab     tab
-	cursor  int
-	reading bool // true while a case study is open
-	vp      viewport.Model
+	site      *Site
+	w, h      int
+	tab       tab
+	focus     pane
+	cursor    int
+	scroll    map[string]int // per-view scroll offset
+	filter    string
+	filtering bool
+	help      bool
 }
 
 func newModel(s *Site, w, h int) model {
 	if w < 20 {
-		w = 80
+		w = 100
 	}
 	if h < 8 {
-		h = 24
+		h = 30
 	}
-	m := model{site: s, w: w, h: h}
-	m.vp = viewport.New(w, h-4)
-	return m
+	return model{site: s, w: w, h: h, scroll: map[string]int{}}
 }
 
 func (m model) Init() tea.Cmd { return nil }
 
+// visible returns the project indexes that match the current filter.
+func (m model) visible() []int {
+	var out []int
+	f := strings.ToLower(m.filter)
+	for i, p := range m.site.Projects {
+		hay := strings.ToLower(p.Title + " " + p.Line + " " + strings.Join(p.Stack, " ") + " " + p.Role)
+		if f == "" || strings.Contains(hay, f) {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+func (m model) clampedCursor() int {
+	v := m.visible()
+	c := m.cursor
+	if c >= len(v) {
+		c = len(v) - 1
+	}
+	if c < 0 {
+		c = 0
+	}
+	return c
+}
+
+func (m model) current() (Project, bool) {
+	v := m.visible()
+	if len(v) == 0 {
+		return Project{}, false
+	}
+	return m.site.Projects[v[m.clampedCursor()]], true
+}
+
+func (m model) viewKey() string {
+	if m.tab == tabProjects {
+		if p, ok := m.current(); ok {
+			return "p:" + p.Slug
+		}
+	}
+	return fmt.Sprintf("t:%d", m.tab)
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		if msg.Width < 20 || msg.Height < 8 {
-			return m, nil
+		if msg.Width >= 20 && msg.Height >= 8 {
+			m.w, m.h = msg.Width, msg.Height
 		}
-		m.w, m.h = msg.Width, msg.Height
-		m.vp.Width, m.vp.Height = m.w, m.h-4
-		if m.reading {
-			m.vp.SetContent(m.caseStudy(m.site.Projects[m.cursor]))
+	case tea.MouseMsg:
+		if msg.Action == tea.MouseActionPress {
+			k := m.viewKey()
+			switch msg.Button {
+			case tea.MouseButtonWheelDown:
+				m.scroll[k] += 3
+			case tea.MouseButtonWheelUp:
+				m.scroll[k] = max(0, m.scroll[k]-3)
+			}
 		}
 	case tea.KeyMsg:
-		k := msg.String()
-		if k == "ctrl+c" || k == "q" && !m.reading {
-			return m, tea.Quit
-		}
-		if m.reading {
-			switch k {
-			case "esc", "backspace", "left", "h", "q":
-				m.reading = false
-				return m, nil
-			}
-			var cmd tea.Cmd
-			m.vp, cmd = m.vp.Update(msg)
-			return m, cmd
-		}
-		switch k {
-		case "tab", "right", "l":
-			m.tab = (m.tab + 1) % 3
-		case "shift+tab", "left", "h":
-			m.tab = (m.tab + 2) % 3
-		case "1":
-			m.tab = tabProjects
-		case "2":
-			m.tab = tabAbout
-		case "3":
-			m.tab = tabContact
-		case "up", "k":
-			if m.tab == tabProjects && m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.tab == tabProjects && m.cursor < len(m.site.Projects)-1 {
-				m.cursor++
-			}
-		case "enter":
-			if m.tab == tabProjects {
-				m.reading = true
-				m.vp.Width, m.vp.Height = m.w, m.h-4
-				m.vp.SetContent(m.caseStudy(m.site.Projects[m.cursor]))
-				m.vp.GotoTop()
-			}
-		}
+		return m.key(msg)
 	}
 	return m, nil
 }
 
-func (m model) View() string {
-	var b strings.Builder
-	b.WriteString(m.header())
-	b.WriteString("\n")
-	body := ""
-	switch {
-	case m.reading:
-		body = m.vp.View()
-	case m.tab == tabProjects:
-		body = m.projectList()
-	case m.tab == tabAbout:
-		body = m.about()
-	default:
-		body = m.contact()
+func (m model) key(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	k := msg.String()
+	if k == "ctrl+c" {
+		return m, tea.Quit
 	}
-	// Pad/clip the body so the footer stays on the last line.
-	lines := strings.Split(body, "\n")
-	room := m.h - 4
-	if room < 1 {
-		room = 1
+	if m.filtering {
+		switch k {
+		case "esc":
+			m.filtering, m.filter, m.cursor = false, "", 0
+		case "enter":
+			m.filtering = false
+		case "backspace":
+			if r := []rune(m.filter); len(r) > 0 {
+				m.filter = string(r[:len(r)-1])
+			}
+			m.cursor = 0
+		default:
+			if msg.Type == tea.KeyRunes {
+				m.filter += string(msg.Runes)
+				m.cursor = 0
+			}
+		}
+		return m, nil
 	}
-	if len(lines) > room {
-		lines = lines[:room]
+	if m.help {
+		m.help = false
+		return m, nil
 	}
-	for len(lines) < room {
-		lines = append(lines, "")
+	vk := m.viewKey()
+	switch k {
+	case "q":
+		return m, tea.Quit
+	case "?":
+		m.help = true
+	case "1":
+		m.tab, m.focus = tabProjects, paneList
+	case "2":
+		m.tab = tabAbout
+	case "3":
+		m.tab = tabLinks
+	case "]":
+		m.tab = (m.tab + 1) % 3
+	case "[":
+		m.tab = (m.tab + 2) % 3
+	case "tab":
+		if m.tab == tabProjects {
+			m.focus = 1 - m.focus
+		} else {
+			m.tab = (m.tab + 1) % 3
+		}
+	case "/":
+		m.tab, m.filtering, m.focus = tabProjects, true, paneList
+	case "esc":
+		if m.filter != "" {
+			m.filter, m.cursor = "", 0
+		} else if m.focus == paneBody && m.tab == tabProjects {
+			m.focus = paneList
+		}
+	case "enter", "right", "l":
+		if m.tab == tabProjects && m.focus == paneList {
+			m.focus = paneBody
+		}
+	case "left", "h", "backspace":
+		if m.tab == tabProjects && m.focus == paneBody {
+			m.focus = paneList
+		}
+	case "up", "k":
+		if m.tab == tabProjects && m.focus == paneList {
+			m.cursor = max(0, m.clampedCursor()-1)
+		} else {
+			m.scroll[vk] = max(0, m.scroll[vk]-1)
+		}
+	case "down", "j":
+		if m.tab == tabProjects && m.focus == paneList {
+			m.cursor = min(len(m.visible())-1, m.clampedCursor()+1)
+		} else {
+			m.scroll[vk]++
+		}
+	case "pgdown", " ", "f":
+		m.scroll[vk] += m.h - 6
+	case "pgup", "b":
+		m.scroll[vk] = max(0, m.scroll[vk]-(m.h-6))
+	case "g", "home":
+		m.scroll[vk] = 0
+	case "G", "end":
+		m.scroll[vk] = 1 << 20 // clamped when rendered
 	}
-	b.WriteString(strings.Join(lines, "\n"))
-	b.WriteString("\n")
-	b.WriteString(m.footer())
-	return b.String()
+	return m, nil
 }
 
-func (m model) header() string {
-	var tabs []string
+/* ---------- layout ---------- */
+
+func (m model) View() string {
+	body := m.h - 2
+	var main string
+	switch {
+	case m.help:
+		main = m.helpPanel(m.w, body)
+	case m.tab == tabProjects:
+		main = m.projectsView(m.w, body)
+	case m.tab == tabAbout:
+		main = m.aboutView(m.w, body)
+	default:
+		main = m.linksView(m.w, body)
+	}
+	return m.topBar(m.w) + "\n" + main + "\n" + m.statusLine(m.w)
+}
+
+func (m model) topBar(w int) string {
+	left := chip("pb", cAccent) + " "
 	for i, n := range tabNames {
 		label := fmt.Sprintf(" %d %s ", i+1, n)
-		if tab(i) == m.tab && !m.reading {
-			tabs = append(tabs, selSt.Render(label))
+		if tab(i) == m.tab {
+			left += sSel.Render(label)
 		} else {
-			tabs = append(tabs, mutedSt.Render(label))
+			left += sDim.Render(label)
 		}
 	}
-	name := titleSt.Render("Pratham Bhavsar") + mutedSt.Render("  backend & full-stack engineer")
-	return name + "\n" + strings.Join(tabs, " ") + "\n" + mutedSt.Render(strings.Repeat("─", m.w))
+	right := sBold.Render(m.site.Profile.Name) + sDim.Render("  "+m.site.Profile.Location+" ") + sOK.Render("●") + sDim.Render(" open to work")
+	return spread(left, right, w)
 }
 
-func (m model) footer() string {
-	help := "↑↓ move · enter open · tab switch · q quit"
-	if m.reading {
-		help = "↑↓ scroll · esc back"
+func (m model) statusLine(w int) string {
+	mode := "BROWSE"
+	hints := [][2]string{{"↑↓", "move"}, {"⏎", "open"}, {"⇥", "focus"}, {"/", "filter"}, {"1-3", "tabs"}, {"?", "help"}, {"q", "quit"}}
+	switch {
+	case m.filtering:
+		mode = "FILTER"
+		hints = [][2]string{{"type", "to filter"}, {"⏎", "keep"}, {"esc", "clear"}}
+	case m.tab == tabProjects && m.focus == paneBody:
+		mode = "READ"
+		hints = [][2]string{{"↑↓", "scroll"}, {"space", "page"}, {"g/G", "ends"}, {"esc", "back"}, {"q", "quit"}}
+	case m.tab != tabProjects:
+		hints = [][2]string{{"↑↓", "scroll"}, {"[ ]", "tabs"}, {"?", "help"}, {"q", "quit"}}
 	}
-	return mutedSt.Render(help)
+	left := chip(mode, cAccent) + " "
+	for _, h := range hints {
+		left += sBold.Render(h[0]) + sDim.Render(" "+h[1]) + "   "
+	}
+	return spread(left, sDim.Render("ssh ssh.prathambhavsar.in"), w)
 }
 
-func (m model) projectList() string {
-	var b strings.Builder
-	b.WriteString("\n")
-	for i, p := range m.site.Projects {
-		cur := "  "
-		title := titleSt.Render(p.Title)
-		if i == m.cursor {
-			cur = accentSt.Render("▌ ")
-			title = accentSt.Bold(true).Render(p.Title)
+func spread(left, right string, w int) string {
+	gap := w - lipgloss.Width(left) - lipgloss.Width(right)
+	if gap < 1 {
+		return ansi.Truncate(left, w, "")
+	}
+	return left + strings.Repeat(" ", gap) + right
+}
+
+// panel draws a hairline box with an inset title and optional right-aligned meta.
+func panel(title, meta string, lines []string, w, h int, focused bool) string {
+	if w < 8 || h < 3 {
+		return ""
+	}
+	bc, tc := cBorder, sDim
+	if focused {
+		bc, tc = cAccent, sBold
+	}
+	b := lipgloss.NewStyle().Foreground(bc)
+	inner := w - 2
+	t := " " + title + " "
+	mt := ""
+	if meta != "" {
+		mt = " " + meta + " "
+	}
+	fill := max(0, inner-1-lipgloss.Width(t)-lipgloss.Width(mt)-1)
+	top := b.Render("┌─") + tc.Render(t) + b.Render(strings.Repeat("─", fill)) + sDim.Render(mt) + b.Render("─┐")
+	out := []string{top}
+	for i := 0; i < h-2; i++ {
+		l := ""
+		if i < len(lines) {
+			l = lines[i]
 		}
-		b.WriteString(cur + title + "  " + mutedSt.Render(p.Role) + "\n")
-		if i == m.cursor {
-			w := m.w - 4
-			b.WriteString("  " + wrap(p.Line, w, "  ") + "\n")
-			b.WriteString("  " + mutedSt.Render(strings.Join(p.Spec, " · ")) + "\n")
-			b.WriteString("  " + greenSt.Render(strings.Join(p.Stack, "  ")) + "\n")
-		}
+		l = ansi.Truncate(l, inner-2, "…")
+		pad := max(0, inner-2-lipgloss.Width(l))
+		out = append(out, b.Render("│")+" "+l+strings.Repeat(" ", pad)+" "+b.Render("│"))
 	}
-	return b.String()
+	out = append(out, b.Render("└"+strings.Repeat("─", inner)+"┘"))
+	return strings.Join(out, "\n")
 }
 
-func (m model) caseStudy(p Project) string {
-	w := m.w - 2
-	if w > 90 {
-		w = 90
+// window slices wrapped lines for scrolling and reports the scroll percentage.
+func (m model) window(lines []string, key string, rows int) ([]string, string) {
+	mx := max(0, len(lines)-rows)
+	off := min(max(m.scroll[key], 0), mx)
+	m.scroll[key] = off
+	end := min(off+rows, len(lines))
+	meta := ""
+	if mx > 0 {
+		meta = fmt.Sprintf("%d%%", off*100/mx)
 	}
-	var b strings.Builder
-	b.WriteString("\n" + titleSt.Render(p.Title) + "\n")
-	b.WriteString(wrap(p.Line, w, "") + "\n")
-	b.WriteString(mutedSt.Render(strings.Join(p.Spec, " · ")) + "\n")
-	b.WriteString(greenSt.Render(strings.Join(p.Stack, "  ")) + "\n")
-	for _, l := range p.Links {
-		b.WriteString(accentSt.Render(l.Href) + mutedSt.Render("  ("+l.Label+")") + "\n")
+	return lines[off:end], meta
+}
+
+/* ---------- projects ---------- */
+
+func (m model) projectsView(w, h int) string {
+	// <80: one pane at a time. 80-119: list + reader. 120+: list + reader + details.
+	if w < 80 {
+		if m.focus == paneList {
+			return m.listPanel(w, h)
+		}
+		return m.readerPanel(w, h)
 	}
-	if len(p.Links) == 0 {
-		b.WriteString(mutedSt.Render("private, no public link") + "\n")
+	if w < 120 {
+		return lipgloss.JoinHorizontal(lipgloss.Top, m.listPanel(30, h), m.readerPanel(w-30, h))
+	}
+	listW, sideW := 34, 40
+	return lipgloss.JoinHorizontal(lipgloss.Top, m.listPanel(listW, h), m.readerPanel(w-listW-sideW, h), m.detailPanel(sideW, h))
+}
+
+func roleChip(role string) string {
+	if role == "client" {
+		return chip("CLIENT", cTeal)
+	}
+	return chip("OWN", cAccent)
+}
+
+func (m model) listPanel(w, h int) string {
+	var lines []string
+	if m.filtering || m.filter != "" {
+		cur := ""
+		if m.filtering {
+			cur = sAccent.Render("█")
+		}
+		lines = append(lines, sAccent.Render("/ ")+sFG.Render(m.filter)+cur, "")
+	}
+	v := m.visible()
+	cursor := m.clampedCursor()
+	inner := w - 4
+	for i, idx := range v {
+		p := m.site.Projects[idx]
+		name := " " + p.Title
+		tag := p.Role
+		gap := strings.Repeat(" ", max(1, inner-lipgloss.Width(name)-lipgloss.Width(tag)-1))
+		if i == cursor {
+			lines = append(lines, sSel.Render(ansi.Truncate(name+gap+tag+" ", inner, "")))
+			lines = append(lines, sDim.Render(" "+ansi.Truncate(strings.Join(p.Stack[:min(3, len(p.Stack))], " · "), inner-1, "…")))
+		} else {
+			lines = append(lines, sBold.Render(name)+sMute.Render(gap+tag))
+		}
+	}
+	if len(v) == 0 {
+		lines = append(lines, sDim.Render(" no matches"))
+	}
+	return panel("Projects", fmt.Sprintf("%d", len(v)), lines, w, h, m.focus == paneList)
+}
+
+func (m model) readerPanel(w, h int) string {
+	p, ok := m.current()
+	if !ok {
+		return panel("Case study", "", []string{sDim.Render("nothing selected")}, w, h, m.focus == paneBody)
+	}
+	cw := min(w-6, 92)
+	lines := []string{sBold.Render(p.Title) + "  " + roleChip(p.Role), ""}
+	for _, x := range strings.Split(wrap(p.Line, cw), "\n") {
+		lines = append(lines, sFG.Render(x))
+	}
+	if p.Note != "" {
+		lines = append(lines, "")
+		for _, x := range strings.Split(wrap(p.Note, cw), "\n") {
+			lines = append(lines, sDim.Render(x))
+		}
 	}
 	for _, block := range strings.Split(strings.TrimSpace(p.Content), "\n\n") {
-		lines := strings.Split(block, "\n")
+		bl := strings.Split(block, "\n")
 		switch {
 		case strings.HasPrefix(block, "## "):
-			b.WriteString(h2St.Render(strip(block[3:])) + "\n")
-		case strings.HasPrefix(lines[0], "- "):
-			for _, l := range lines {
-				b.WriteString(accentSt.Render("• ") + wrap(strip(strings.TrimPrefix(l, "- ")), w-2, "  ") + "\n")
+			lines = append(lines, "", sAccent.Bold(true).Render(strip(block[3:])))
+		case strings.HasPrefix(bl[0], "- "):
+			lines = append(lines, "")
+			for _, l := range bl {
+				for i, x := range strings.Split(wrap(strip(strings.TrimPrefix(l, "- ")), cw-2), "\n") {
+					pre := "  "
+					if i == 0 {
+						pre = sAccent.Render("• ")
+					}
+					lines = append(lines, pre+sFG.Render(x))
+				}
 			}
 		default:
-			b.WriteString("\n" + wrap(strip(strings.Join(lines, " ")), w, "") + "\n")
+			lines = append(lines, "")
+			for _, x := range strings.Split(wrap(strip(strings.Join(bl, " ")), cw), "\n") {
+				lines = append(lines, sFG.Render(x))
+			}
 		}
 	}
-	return b.String()
+	vis, meta := m.window(lines, "p:"+p.Slug, h-2)
+	return panel(p.Title, meta, vis, w, h, m.focus == paneBody)
 }
 
-func (m model) about() string {
-	w := m.w - 4
-	if w > 84 {
-		w = 84
+func (m model) detailPanel(w, h int) string {
+	p, ok := m.current()
+	if !ok {
+		return panel("Details", "", nil, w, h, false)
 	}
-	t := "I started out writing Flutter apps and moved to backends because that's where the interesting problems were. These days I mostly write Rust (axum, SQLx) and Go, with Postgres underneath and React or Next.js on top. Lately I've been building open-source tools I'd want to use myself: an affiliate engine, a self-hosted support inbox, a study tool, and a terminal workspace for running coding agents."
-	roles := [][2]string{
-		{"Pixel Gen", "Software Development Engineer · 08/2025 – now"},
-		{"Nyxos", "Developer, client projects · now · nyxos.in"},
-		{"Prudent Corporate", "Flutter Developer · 09/2025 – 02/2026"},
-		{"Nautilus Techlabs", "Flutter Developer · 02/2024 – 09/2025"},
-		{"Exito Systems", "Flutter Intern · 11/2023 – 02/2024"},
+	l := []string{sDim.Render("scope")}
+	for _, s := range p.Spec {
+		l = append(l, sFG.Render(s))
 	}
-	var b strings.Builder
-	b.WriteString("\n" + wrap(t, w, "") + "\n\n")
-	b.WriteString(h2St.Render("Experience") + "\n")
-	for _, r := range roles {
-		b.WriteString(titleSt.Render(r[0]) + "  " + mutedSt.Render(r[1]) + "\n")
+	l = append(l, "", sDim.Render("stack"))
+	for _, s := range p.Stack {
+		l = append(l, sTeal.Render(s))
 	}
-	b.WriteString("\n" + mutedSt.Render("B.Tech Computer Engineering, Gandhinagar Institute of Technology, 2024"))
-	return b.String()
+	l = append(l, "", sDim.Render("links"))
+	if len(p.Links) == 0 {
+		l = append(l, sMute.Render("private, no public link"))
+	}
+	for _, k := range p.Links {
+		l = append(l, chip(strings.ToUpper(k.Kind), cOK), link(k.Href, short(k.Href)))
+	}
+	return panel("Details", "", l, w, h, false)
 }
 
-func (m model) contact() string {
-	return "\n" +
-		titleSt.Render("Email     ") + accentSt.Render("pratham.bhavsar501@gmail.com") + "\n" +
-		titleSt.Render("GitHub    ") + accentSt.Render("github.com/PrathamBhavsar") + "\n" +
-		titleSt.Render("Web       ") + accentSt.Render("prathambhavsar.github.io") + "\n" +
-		titleSt.Render("Location  ") + "Ahmedabad, India\n"
+/* ---------- about / links / help ---------- */
+
+func (m model) aboutView(w, h int) string {
+	if w < 100 {
+		return m.aboutBody(w, h)
+	}
+	pr := m.site.Profile
+	l := []string{sBold.Render(pr.Name), sDim.Render(pr.Tagline), sDim.Render(pr.Location), "",
+		sDim.Render("email"), link("mailto:"+pr.Email, pr.Email), ""}
+	for _, k := range pr.Links {
+		l = append(l, sDim.Render(strings.ToLower(k.Label)), link(k.URL, short(k.URL)), "")
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, panel("Profile", "", l, 38, h, false), m.aboutBody(w-38, h))
 }
 
-// wrap word-wraps s to width, indenting continuation lines.
-func wrap(s string, width int, indent string) string {
+func (m model) aboutBody(w, h int) string {
+	pr := m.site.Profile
+	cw := min(w-6, 92)
+	var l []string
+	for _, p := range pr.About {
+		for _, x := range strings.Split(wrap(p, cw), "\n") {
+			l = append(l, sFG.Render(x))
+		}
+		l = append(l, "")
+	}
+	l = append(l, sAccent.Bold(true).Render("Skills"), "")
+	for _, x := range strings.Split(wrap(strings.Join(pr.Skills, "  ·  "), cw), "\n") {
+		l = append(l, sTeal.Render(x))
+	}
+	l = append(l, "", sAccent.Bold(true).Render("Experience"))
+	for _, e := range pr.Experience {
+		org := sBold.Render(e.Org)
+		if e.URL != "" {
+			org = link(e.URL, e.Org)
+		}
+		l = append(l, "", org+sDim.Render("  "+e.Role+"  ·  "+e.When))
+		for _, x := range strings.Split(wrap(e.Desc, cw), "\n") {
+			l = append(l, sFG.Render(x))
+		}
+	}
+	l = append(l, "", sAccent.Bold(true).Render("Education"), "")
+	for _, e := range pr.Education {
+		l = append(l, sBold.Render(e.Org)+sDim.Render("  "+e.Role+"  ·  "+e.When))
+	}
+	vis, meta := m.window(l, "t:1", h-2)
+	return panel("About", meta, vis, w, h, true)
+}
+
+func (m model) linksView(w, h int) string {
+	pr := m.site.Profile
+	var l []string
+	row := func(label, text, url string) {
+		l = append(l, sDim.Render(fmt.Sprintf("%-14s", label))+link(url, text))
+	}
+	row("email", pr.Email, "mailto:"+pr.Email)
+	for _, k := range pr.Links {
+		row(strings.ToLower(k.Label), k.URL, k.URL)
+	}
+	l = append(l, sDim.Render(fmt.Sprintf("%-14s", "location"))+sFG.Render(pr.Location))
+	l = append(l, "", sAccent.Bold(true).Render("Projects"), "")
+	for _, p := range m.site.Projects {
+		if len(p.Links) == 0 {
+			l = append(l, sDim.Render(fmt.Sprintf("%-14s", strings.ToLower(p.Title)))+sMute.Render("private"))
+			continue
+		}
+		for i, k := range p.Links {
+			name := ""
+			if i == 0 {
+				name = strings.ToLower(p.Title)
+			}
+			l = append(l, sDim.Render(fmt.Sprintf("%-14s", name))+link(k.Href, k.Href))
+		}
+	}
+	l = append(l, "", sMute.Render("Links are clickable in terminals that support it (iTerm2, kitty, WezTerm, Windows Terminal)."))
+	vis, meta := m.window(l, "t:2", h-2)
+	return panel("Links", meta, vis, w, h, true)
+}
+
+func (m model) helpPanel(w, h int) string {
+	rows := [][2]string{
+		{"↑ ↓  j k", "move / scroll"},
+		{"⏎  →", "open the selected project"},
+		{"⇥", "switch between list and reader"},
+		{"/", "filter projects by name, stack or role"},
+		{"1 2 3  [ ]", "Projects, About, Links"},
+		{"space b g G", "page down, page up, top, bottom"},
+		{"mouse wheel", "scroll"},
+		{"esc", "back / clear filter"},
+		{"q  ctrl+c", "quit"},
+	}
+	var l []string
+	for _, r := range rows {
+		l = append(l, sBold.Render(fmt.Sprintf("%-16s", r[0]))+sDim.Render(r[1]))
+	}
+	l = append(l, "", sMute.Render("press any key to close"))
+	return panel("Help", "", l, w, h, true)
+}
+
+/* ---------- text helpers ---------- */
+
+// wrap word-wraps plain text to width.
+func wrap(s string, width int) string {
 	if width < 10 {
 		width = 10
 	}
@@ -274,5 +590,5 @@ func wrap(s string, width int, indent string) string {
 	if line != "" {
 		lines = append(lines, line)
 	}
-	return strings.Join(lines, "\n"+indent)
+	return strings.Join(lines, "\n")
 }

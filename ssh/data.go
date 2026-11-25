@@ -28,23 +28,58 @@ type Project struct {
 	Content string   `json:"-"`
 }
 
-type Site struct{ Projects []Project }
+type ProfileLink struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+}
+
+type Entry struct {
+	Org  string `json:"org"`
+	Role string `json:"role"`
+	When string `json:"when"`
+	URL  string `json:"url"`
+	Desc string `json:"desc"`
+}
+
+type Profile struct {
+	Name       string        `json:"name"`
+	Tagline    string        `json:"tagline"`
+	Location   string        `json:"location"`
+	Email      string        `json:"email"`
+	Links      []ProfileLink `json:"links"`
+	About      []string      `json:"about"`
+	Skills     []string      `json:"skills"`
+	Experience []Entry       `json:"experience"`
+	Education  []Entry       `json:"education"`
+}
+
+type Site struct {
+	Projects []Project
+	Profile  Profile
+}
 
 func loadSite() (*Site, error) {
+	s := &Site{}
 	raw, err := dataFS.ReadFile("data/projects.json")
 	if err != nil {
 		return nil, err
 	}
-	var ps []Project
-	if err := json.Unmarshal(raw, &ps); err != nil {
+	if err := json.Unmarshal(raw, &s.Projects); err != nil {
 		return nil, err
 	}
-	for i := range ps {
-		if b, err := dataFS.ReadFile("data/content/" + ps[i].Slug + ".md"); err == nil {
-			ps[i].Content = string(b)
+	for i := range s.Projects {
+		if b, err := dataFS.ReadFile("data/content/" + s.Projects[i].Slug + ".md"); err == nil {
+			s.Projects[i].Content = string(b)
 		}
 	}
-	return &Site{Projects: ps}, nil
+	raw, err = dataFS.ReadFile("data/profile.json")
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(raw, &s.Profile); err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 var (
