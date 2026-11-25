@@ -1,0 +1,24 @@
+[Unit]
+Description=Portfolio over SSH
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=portfolio
+Group=portfolio
+ExecStart=/opt/portfolio-ssh/portfolio-ssh -addr :22 -host-key /opt/portfolio-ssh/host_ed25519
+WorkingDirectory=/opt/portfolio-ssh
+# Binding :22 as a non-root user.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/portfolio-ssh
+ProtectHome=true
+PrivateTmp=true
+MemoryMax=128M
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
