@@ -280,7 +280,7 @@ html[data-theme="light"] .navbar {
 }
 
 .cards {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
 }
 
 .muted {
@@ -345,7 +345,12 @@ html[data-theme="light"] .navbar {
 }
 
 .contact-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+}
+
+.contact-grid .card {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .contact-link {
