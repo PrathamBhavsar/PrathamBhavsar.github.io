@@ -62,10 +62,11 @@ function mediaWell(p) {
       <span class="well-empty-meta">${aspect === "phone" ? "mobile" : "desktop"} · gif</span>
     </div>`;
   }
+  const cap = p.media.caption ? `<p class="well-cap">${esc(p.media.caption)}</p>` : "";
   return `<div class="well" data-aspect="${aspect}">
     <img class="well-img" src="${poster || demo}" data-still="${poster || demo}"
-         data-motion="${demo}" alt="${esc(p.title)} demo" loading="lazy" decoding="async" />
-  </div>`;
+         data-motion="${demo}" alt="${esc(p.title)} screenshot" loading="lazy" decoding="async" />
+  </div>${cap}`;
 }
 
 function linkRow(p) {

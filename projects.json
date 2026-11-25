@@ -1,72 +1,260 @@
 [
   {
+    "slug": "learnpuppy",
+    "title": "LearnPuppy",
+    "one_liner": "A local tutor that keeps what you learn in a knowledge graph and quizzes you before you forget it.",
+    "role": "product",
+    "spec": [
+      "Rust + React",
+      "7 crates",
+      "418 commits in 3 weeks",
+      "one binary"
+    ],
+    "stack": [
+      "Rust",
+      "axum",
+      "React",
+      "TypeScript",
+      "FSRS",
+      "Playwright"
+    ],
+    "note": "Runs on your machine and drives the claude, codex and agy CLIs you already have logged in.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/learnpuppy/shot.webp",
+      "poster": "media/learnpuppy/shot.webp",
+      "caption": "Sample data from the demo build."
+    },
+    "links": [
+      {
+        "kind": "live",
+        "label": "site",
+        "href": "https://prathambhavsar.github.io/learnpuppy/"
+      },
+      {
+        "kind": "source",
+        "label": "learnpuppy",
+        "href": "https://github.com/PrathamBhavsar/learnpuppy"
+      }
+    ]
+  },
+  {
+    "slug": "deskpost",
+    "title": "Deskpost",
+    "one_liner": "A support inbox you host yourself: shared queue, threads, internal notes, email in and out.",
+    "role": "product",
+    "spec": [
+      "Rust API + Next.js",
+      "5 crates",
+      "AGPL-3.0",
+      "Docker Compose or systemd"
+    ],
+    "stack": [
+      "Rust",
+      "axum",
+      "SQLx",
+      "PostgreSQL",
+      "Next.js",
+      "Caddy"
+    ],
+    "note": "Customers can write in by email or from an embeddable widget. No paid services needed to run it.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/deskpost/shot.webp",
+      "poster": "media/deskpost/shot.webp",
+      "caption": "Sample data from the demo build. The UI still shows its old name, SendDesk."
+    },
+    "links": [
+      {
+        "kind": "live",
+        "label": "site",
+        "href": "https://pratham-projects.github.io/deskpost/"
+      },
+      {
+        "kind": "source",
+        "label": "deskpost",
+        "href": "https://github.com/pratham-projects/deskpost"
+      }
+    ]
+  },
+  {
+    "slug": "bunfiiliate",
+    "title": "bunfiiliate",
+    "one_liner": "Open-source affiliate tracking and commission engine with a double-entry ledger.",
+    "role": "product",
+    "spec": [
+      "Rust workspace, 6 crates",
+      "write-ahead spool",
+      "double-entry ledger",
+      "280 commits"
+    ],
+    "stack": [
+      "Rust",
+      "axum",
+      "PostgreSQL",
+      "WAL spool",
+      "React",
+      "Caddy"
+    ],
+    "note": "The click path never touches the database, and every cent that moves is a ledger entry.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/bunfiiliate/shot.webp",
+      "poster": "media/bunfiiliate/shot.webp",
+      "caption": "Seeded demo data."
+    },
+    "links": [
+      {
+        "kind": "source",
+        "label": "bunfiiliate",
+        "href": "https://github.com/PrathamBhavsar/bunfiiliate"
+      }
+    ]
+  },
+  {
+    "slug": "kestrel",
+    "title": "Kestrel",
+    "one_liner": "A terminal workspace that runs many coding agents in git worktrees, locally or on a VPS.",
+    "role": "product",
+    "spec": [
+      "25 Rust crates",
+      "~51k lines",
+      "TUI + host daemon",
+      "500 commits since Nov 16"
+    ],
+    "stack": [
+      "Rust",
+      "ratatui",
+      "PTY",
+      "git worktrees",
+      "SSH"
+    ],
+    "note": "Built to replace an Electron IDE that sat at about 2 GB of RAM with a handful of agents open.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/kestrel/shot.webp",
+      "poster": "media/kestrel/shot.webp",
+      "caption": "Design render of the workspace screen, not a live capture."
+    },
+    "links": []
+  },
+  {
+    "slug": "imagehub",
+    "title": "ImageHub",
+    "one_liner": "Content backend that imports scraped comics and galleries, stores them in R2 and pushes them out to many sites.",
+    "role": "client",
+    "spec": [
+      "Go + React",
+      "141 Go files",
+      "18 migrations",
+      "single binary"
+    ],
+    "stack": [
+      "Go",
+      "Echo",
+      "PostgreSQL",
+      "Redis",
+      "Cloudflare R2",
+      "React"
+    ],
+    "note": "A Go rewrite of a Python service. I wrote most of the commits.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/imagehub/shot.webp",
+      "poster": "media/imagehub/shot.webp",
+      "caption": "Local build with mock data."
+    },
+    "links": []
+  },
+  {
+    "slug": "octopushub",
+    "title": "OctopusHub",
+    "one_liner": "The Python content hub that ImageHub grew out of: ingest, store, distribute to domains over SSH.",
+    "role": "client",
+    "spec": [
+      "FastAPI + Celery",
+      "110 Python files",
+      "React admin",
+      "team project"
+    ],
+    "stack": [
+      "Python",
+      "FastAPI",
+      "Celery",
+      "Redis",
+      "PostgreSQL",
+      "React"
+    ],
+    "note": "Team codebase. My part was the video distribution and trimming work.",
+    "media": {
+      "aspect": "desktop",
+      "demo": "media/octopushub/shot.webp",
+      "poster": "media/octopushub/shot.webp",
+      "caption": "Local build with mock data."
+    },
+    "links": []
+  },
+  {
     "slug": "gaming-zone",
     "title": "Gaming Zone",
     "one_liner": "Multi-tenant booking and billing OS for gaming cafés.",
     "role": "product",
-    "spec": ["308 Dart files", "97 TS files", "20 backend modules", "72 screens"],
-    "stack": ["Flutter", "Riverpod", "Bun", "PostgreSQL", "Redis"],
+    "spec": [
+      "308 Dart files",
+      "97 TS files",
+      "20 backend modules",
+      "72 screens"
+    ],
+    "stack": [
+      "Flutter",
+      "Riverpod",
+      "Bun",
+      "PostgreSQL",
+      "Redis"
+    ],
     "note": "Player app, admin dashboard and a per-station PC agent that keeps billing correct through a network outage.",
-    "media": { "aspect": "phone", "demo": null, "poster": null },
+    "media": {
+      "aspect": "phone",
+      "demo": null,
+      "poster": null
+    },
     "links": [
-      { "kind": "source", "label": "gz_app", "href": "https://github.com/PrathamBhavsar/gz_app" }
+      {
+        "kind": "source",
+        "label": "gz_app",
+        "href": "https://github.com/PrathamBhavsar/gz_app"
+      }
     ]
-  },
-  {
-    "slug": "getnauti",
-    "title": "Companion AI",
-    "one_liner": "AI companion chat, character creation and image generation on mobile.",
-    "role": "client",
-    "spec": ["764 Dart files", "75 screens", "iOS + Android", "Next.js web companion"],
-    "stack": ["Flutter", "Riverpod", "Dio", "WebSockets"],
-    "note": "Character discovery, group chat, a text-to-image studio and a credit economy, all behind an age gate.",
-    "media": { "aspect": "phone", "demo": null, "poster": null },
-    "links": []
-  },
-  {
-    "slug": "easy-mech",
-    "title": "Easy Mech",
-    "one_liner": "Roadside assistance marketplace — owners, mechanics, dispatch, live tracking.",
-    "role": "client",
-    "spec": ["474 Dart files", "3 roles", "15 feature areas", "live map dispatch"],
-    "stack": ["Flutter", "Riverpod", "Freezed", "Mapbox"],
-    "note": "Near-typeless onboarding by camera, built in parallel against a live backend that was still being written.",
-    "media": { "aspect": "phone", "demo": null, "poster": null },
-    "links": []
-  },
-  {
-    "slug": "affiliate",
-    "title": "Affiliate Platform",
-    "one_liner": "Click-to-commission tracking, from embedded tracker to payout.",
-    "role": "client",
-    "spec": ["23 backend modules", "28 tables", "3 roles", "multi-currency"],
-    "stack": ["Next.js", "Bun", "Elysia", "PostgreSQL"],
-    "note": "A public ingestion endpoint that cannot lose a conversion, because a lost conversion is money nobody gets paid.",
-    "media": { "aspect": "desktop", "demo": null, "poster": null },
-    "links": []
-  },
-  {
-    "slug": "perchance",
-    "title": "Ledger",
-    "one_liner": "A dark, document-grade UI for an AI generation platform.",
-    "role": "client",
-    "spec": ["150 TS files", "10 routes", "design + motion system", "no stub pages"],
-    "stack": ["React", "TypeScript", "Vite", "Tailwind"],
-    "note": "Pick a base model and a LoRA once; that choice follows you into every tool on the platform.",
-    "media": { "aspect": "desktop", "demo": null, "poster": null },
-    "links": []
   },
   {
     "slug": "video-pipeline",
     "title": "Video Encoding Pipeline",
     "one_liner": "Batch MP4 → adaptive HLS, with validation that catches broken output.",
     "role": "product",
-    "spec": ["4 tools", "dual-GPU NVENC", "scene fragmenter", "OCR subtitles"],
-    "stack": ["Python", "FFmpeg", "NVENC", "Tesseract"],
+    "spec": [
+      "4 tools",
+      "dual-GPU NVENC",
+      "scene fragmenter",
+      "OCR subtitles"
+    ],
+    "stack": [
+      "Python",
+      "FFmpeg",
+      "NVENC",
+      "Tesseract"
+    ],
     "note": "Enumerates each GPU's real encode capability, then runs two codec ladders on two cards at once.",
-    "media": { "aspect": "desktop", "demo": null, "poster": null },
+    "media": {
+      "aspect": "desktop",
+      "demo": null,
+      "poster": null
+    },
     "links": [
-      { "kind": "source", "label": "m3u8-converter", "href": "https://github.com/PrathamBhavsar/m3u8-converter" }
+      {
+        "kind": "source",
+        "label": "m3u8-converter",
+        "href": "https://github.com/PrathamBhavsar/m3u8-converter"
+      }
     ]
   }
 ]
