@@ -710,3 +710,6 @@ html[data-theme="light"] .navbar {
 .well[data-aspect="desktop"] { aspect-ratio: 16 / 10; }
 .well[data-aspect="desktop"] .well-img { width: 100%; height: 100%; object-fit: cover; object-position: left top; }
 .well-cap { margin: 6px 2px 0; font-size: 0.72rem; color: var(--muted); }
+
+.terminal-line { margin-top: 1.1rem; font-size: 0.85rem; }
+.terminal-line code, .contact-grid code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
