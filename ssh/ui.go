@@ -302,7 +302,7 @@ func (m model) topBar(w int) string {
 			left += m.t.dim.Render(label)
 		}
 	}
-	right := m.t.bold.Render(m.site.Profile.Name) + m.t.dim.Render("  "+m.site.Profile.Location+" ") + m.t.ok.Render("●") + m.t.dim.Render(" open to work")
+	right := m.t.bold.Render(m.site.Profile.Name) + m.t.dim.Render("  "+m.site.Profile.Location+" ")
 	return spread(left, right, w)
 }
 
